@@ -45,6 +45,8 @@ class Id extends Token {
     }
 
     Id(String name) {
+        super();
+        setTag(ID);
         this.name = name;
     }
 
@@ -69,6 +71,8 @@ class Int extends  Token{
     }
 
     Int(int val){
+        super();
+        setTag(INT);
         this.val = val;
     }
 
@@ -92,6 +96,8 @@ class Double extends Token {
     }
 
     Double(double val) {
+        super();
+        setTag(DOUBLE);
         this.val = val;
     }
 
@@ -116,6 +122,8 @@ class Char extends Token {
     }
 
     Char(char ch) {
+        super();
+        setTag(CH);
         this.ch = ch;
     }
 
@@ -139,6 +147,8 @@ class Str extends Token {
     }
 
     Str(String str) {
+        super();
+        setTag(STR);
         this.str = str;
     }
 
@@ -183,6 +193,7 @@ class KeyWords {
         keyWords.put("break", KW_BREAK);
         keyWords.put("continue", KW_CONTINUE);
         keyWords.put("return", KW_RETURN);
+        keyWords.put("main", KW_MAIN);
     }
 
     public HashMap<String, Tag> getKeyWords() {

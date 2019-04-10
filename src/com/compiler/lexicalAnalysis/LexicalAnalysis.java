@@ -1,6 +1,8 @@
 package com.compiler.lexicalAnalysis;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 import static com.compiler.lexicalAnalysis.Tag.*;
 
@@ -18,6 +20,8 @@ public class LexicalAnalysis {
     private KeyWords keyWords = new KeyWords();
     private char currChar;
     private Scanner scanner;
+    private HashMap<String, Id> Ids = new HashMap<>();
+    private ArrayList<Error> errors = new ArrayList<>();
 
     public LexicalAnalysis(String fileName) {
         File file = new File(fileName);
@@ -67,6 +71,7 @@ public class LexicalAnalysis {
         System.out.println("行：" + scanner.getLineNum() +
                 ", 列：" + scanner.getColNum() +
                 " : " + error);
+        errors.add(new Error(error, scanner.getLineNum(), scanner.getColNum()));
     }
 
     public void analyze() {
@@ -385,7 +390,18 @@ public class LexicalAnalysis {
                 scan();
             }
             System.out.println(t.toString());
+            if(t instanceof Id){
+                Ids.putIfAbsent(((Id)t).getName(), (Id)t);
+            }
+        }
+        System.out.println("\n所有的标识符:");
+        Ids.forEach((name, id)->{
+            System.out.println(id.toString());
+        });
+
+        System.out.println("\n所有的错误:");
+        for(Error error : errors){
+            System.out.println(error.toString());
         }
     }
-
 }
