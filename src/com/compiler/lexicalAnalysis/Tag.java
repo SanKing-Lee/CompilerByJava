@@ -12,11 +12,10 @@ package com.compiler.lexicalAnalysis;
 
 public enum Tag {
     ERR,
-    END,
-    ID,
-    KW_INT, KW_CHAR, KW_VOID,
+    ID, PLACEHOLDER,
+    KW_INT, KW_DOUBLE, KW_CHAR, KW_VOID, KW_STRING,
     KW_EXTERN,
-    NUM, CH, STR,
+    INT, DOUBLE, CH, STR,
     NOT, LEA,
     ADD, SUB, MUL, DIV, MOD,
     INC, DEC,

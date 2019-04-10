@@ -61,13 +61,14 @@ class Id extends Token {
     }
 }
 
-class Num extends Token {
+class Int extends  Token{
     private int val;
 
-    Num() {
+    Int(){
+
     }
 
-    Num(int val) {
+    Int(int val){
         this.val = val;
     }
 
@@ -79,8 +80,31 @@ class Num extends Token {
         this.val = val;
     }
 
+    public String toString(){
+        return "整型数字：" + val;
+    }
+}
+
+class Double extends Token {
+    private double val;
+
+    Double() {
+    }
+
+    Double(double val) {
+        this.val = val;
+    }
+
+    public double getVal() {
+        return val;
+    }
+
+    public void setVal(int val) {
+        this.val = val;
+    }
+
     public String toString() {
-        return "数字常量：" + val;
+        return "浮点数：" + val;
     }
 
 }
@@ -143,7 +167,9 @@ class KeyWords {
 
     public KeyWords() {
         keyWords.put("int", KW_INT);
+        keyWords.put("double", KW_DOUBLE);
         keyWords.put("char", KW_CHAR);
+        keyWords.put("string", KW_STRING);
         keyWords.put("void", KW_VOID);
         keyWords.put("extern", KW_EXTERN);
         keyWords.put("if", KW_IF);

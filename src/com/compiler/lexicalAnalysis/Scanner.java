@@ -56,6 +56,10 @@ public class Scanner {
         return ch;
     }
 
+    public char peek(){
+        return buffer[readPos+1];
+    }
+
     public int getReadPos() {
         return readPos;
     }

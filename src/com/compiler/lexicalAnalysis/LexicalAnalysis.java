@@ -49,10 +49,13 @@ public class LexicalAnalysis {
         currChar = scanner.scan();
     }
 
+    private char peek() {
+        return scanner.peek();
+    }
+
     private boolean scanNeed(char needChar) {
         char ch = scanner.scan();
         if (ch == needChar) {
-            currChar = scanner.scan();
             return true;
         } else {
             currChar = ch;
@@ -67,14 +70,14 @@ public class LexicalAnalysis {
     }
 
     public void analyze() {
+        scan();
         while (!scanner.isEOF()) {
-            scan();
             Token t = null;
             // 忽略所有的无效字符
-            while(currChar == ' ' || currChar == '\n' || currChar == '\t'){
+            while (currChar == ' ' || currChar == '\n' || currChar == '\t' || currChar == '\r') {
                 scan();
             }
-            if(scanner.isEOF()){
+            if (scanner.isEOF()) {
                 break;
             }
             // 标识符或关键字
@@ -95,13 +98,46 @@ public class LexicalAnalysis {
             }
             // 数字
             else if (isDigit(currChar)) {
-                int val = 0;
+                StringBuilder num = new StringBuilder();
+                double val = 0;
                 if (currChar != '0') {
                     // 以数字1-9开始的十进制数字
                     do {
-                        val = val * 10 + currChar - '0';
+                        num.append(currChar);
                         scan();
                     } while (isDigit(currChar));
+                    val = java.lang.Double.valueOf(num.toString());
+                    t = new Int((int) val);
+                    if (currChar == '.') {
+                        num.append('.');
+                        scan();
+                        double fra = 0;
+                        do {
+                            num.append(currChar);
+                            scan();
+                        } while (isDigit(currChar));
+                        val = java.lang.Double.valueOf(num.toString());
+                        t = new Double(val);
+                    }
+                    if (currChar == 'e' || currChar == 'E') {
+                        int exp = 0;
+                        boolean isNegative = false;
+                        scan();
+                        if (currChar == '-') {
+                            isNegative = true;
+                            scan();
+                        }
+                        do {
+                            exp = exp * 10 + currChar - '0';
+                            scan();
+                        } while (isDigit(currChar));
+                        if (isNegative) {
+                            val /= Math.pow(10, exp);
+                        } else {
+                            val *= Math.pow(10, exp);
+                        }
+                        t = new Double(val);
+                    }
                 } else {
                     scan();
                     if (currChar == 'x' || currChar == 'X') {
@@ -144,7 +180,7 @@ public class LexicalAnalysis {
                     }
                 }
                 if (t == null) {
-                    t = new Num(val);
+                    t = new Int((int) val);
                 }
             }
             // 字符常量
@@ -176,7 +212,8 @@ public class LexicalAnalysis {
                             c = '\'';
                             break;
                         default:
-                            c = currChar;
+                            errorMessage("无效的转义字符！");
+                            t = new Token(ERR);
                     }
                 }
                 // 读入字符常量时遇到换行符或者文件结尾
@@ -188,8 +225,6 @@ public class LexicalAnalysis {
                 else if (currChar == '\'') {
                     errorMessage("字符常量里没有数据！");
                     t = new Token(ERR);
-                    // 忽略掉该引号
-                    scan();
                 }
                 // 读入一个正常的字符常量
                 else c = currChar;
@@ -203,6 +238,7 @@ public class LexicalAnalysis {
                         t = new Token(ERR);
                     }
                 }
+                scan();
             }
             // 字符串常量
             else if (currChar == '\"') {
@@ -234,11 +270,11 @@ public class LexicalAnalysis {
                             case '\n':
                                 break;
                             default:
-                                str.append(currChar);
+                                errorMessage("未定义的转义符！");
                                 break;
                         }
                     } else if (currChar == '\n' || scanner.isEOF()) {
-                        errorMessage("读取字符串常量时遇到文件结尾！");
+                        errorMessage("读取字符串常量时遇到换行符或文件结尾！");
                         t = new Token(ERR);
                         break;
                     } else {
@@ -248,10 +284,11 @@ public class LexicalAnalysis {
                 if (t == null) {
                     t = new Str(str.toString());
                 }
+                scan();
             }
             // 界符
             else {
-                if(scanner.isEOF()){
+                if (scanner.isEOF()) {
                     break;
                 }
                 switch (currChar) {
@@ -263,15 +300,37 @@ public class LexicalAnalysis {
                         break;
                     case '*':
                         t = new Token(MUL);
-                        scan();
                         break;
                     case '/':
-                        t = new Token(DIV);
                         scan();
+                        if (currChar == '/') {
+                            scan();
+                            while (!(currChar == '\n' || scanner.isEOF())) {
+                                scan();
+                                t = new Token(ERR);
+                            }
+                        } else if (currChar == '*') {
+                            scan();
+                            while (!scanner.isEOF()) {
+                                scan();
+                                if (currChar == '*') {
+                                    while (currChar == '*') scan();
+                                    if (currChar == '/') {
+                                        t = new Token(PLACEHOLDER);
+                                        break;
+                                    }
+                                }
+                                if (t == null && scanner.isEOF()) {
+                                    errorMessage("多行注释出错!");
+                                    t = new Token(ERR);
+                                }
+                            }
+                        } else {
+                            t = new Token(DIV);
+                        }
                         break;
                     case '%':
                         t = new Token(MOD);
-                        scan();
                         break;
                     case '>':
                         t = new Token((scanNeed('=')) ? GE : GT);
@@ -292,26 +351,41 @@ public class LexicalAnalysis {
                         }
                         break;
                     case '!':
-                        t = new Token((scanNeed('='))?NEQU:NOT); break;
+                        t = new Token((scanNeed('=')) ? NEQU : NOT);
+                        break;
                     case ',':
-                        t = new Token(COMMA); scan(); break;
-                    case ':': t = new Token(COLON); scan(); break;
-                    case ';': t = new Token(SEMICON); scan(); break;
-                    case '(': t = new Token(LPAREN); scan(); break;
-                    case ')': t = new Token(RPAREN); scan(); break;
-                    case '[': t = new Token(LBRACK); scan(); break;
-                    case ']': t = new Token(RBRACK); scan(); break;
-                    case '{': t = new Token(LBRACE); scan();break;
-                    case '}': t = new Token(RBRACE); scan(); break;
+                        t = new Token(COMMA);
+                        break;
+                    case ':':
+                        t = new Token(COLON);
+                        break;
+                    case ';':
+                        t = new Token(SEMICON);
+                        break;
+                    case '(':
+                        t = new Token(LPAREN);
+                        break;
+                    case ')':
+                        t = new Token(RPAREN);
+                        break;
+                    case '[':
+                        t = new Token(LBRACK);
+                        break;
+                    case ']':
+                        t = new Token(RBRACK);
+                        break;
+                    case '{':
+                        t = new Token(LBRACE);
+                        break;
+                    case '}':
+                        t = new Token(RBRACE);
+                        break;
                     default:
-                        t = new Token(ERR);
-                        errorMessage("该词法记号未定义！");
-                        scan();
                 }
+                scan();
             }
             System.out.println(t.toString());
         }
-
     }
 
 }
