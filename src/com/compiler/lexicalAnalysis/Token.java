@@ -72,7 +72,7 @@ class Int extends  Token{
 
     Int(int val){
         super();
-        setTag(INT);
+        setTag(NUM);
         this.val = val;
     }
 
@@ -97,7 +97,7 @@ class Double extends Token {
 
     Double(double val) {
         super();
-        setTag(DOUBLE);
+        setTag(NUM);
         this.val = val;
     }
 
