@@ -80,6 +80,14 @@ abstract class Symbol {
     public String toString() {
         return name;
     }
+
+    public boolean equals(Object obj){
+        if(obj == null){
+            return false;
+        }
+        Symbol objSymbol = (Symbol)obj;
+        return name.equals(objSymbol.getName());
+    }
 }
 
 class NonTerminal extends Symbol {
