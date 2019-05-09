@@ -41,8 +41,7 @@ public class SyntaxAnalysis {
         analyzeTable = grammarAnalysis.generateAnalyzeTable();
         // 调用词法分析并获得所有的词法记号
         LexicalAnalysis lexicalAnalysis = new LexicalAnalysis("test.c");
-        lexicalAnalysis.analyze();
-        tokens = lexicalAnalysis.getTokens();
+        tokens = (ArrayList<Token>)lexicalAnalysis.analyze();
         // 初始化分析栈、根结点、当前结点和树栈
         analyzeStack = new Stack<>();
         root = new DefaultMutableTreeNode(START_SYMBOL);

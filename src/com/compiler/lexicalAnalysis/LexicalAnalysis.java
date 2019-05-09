@@ -3,6 +3,7 @@ package com.compiler.lexicalAnalysis;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static com.compiler.lexicalAnalysis.Tag.*;
 
@@ -22,11 +23,6 @@ public class LexicalAnalysis {
     private Scanner scanner;
     private HashMap<String, Id> Ids = new HashMap<>();
     private ArrayList<Error> errors = new ArrayList<>();
-    private ArrayList<Token> tokens = new ArrayList<>();
-
-    public ArrayList<Token> getTokens() {
-        return tokens;
-    }
 
     public LexicalAnalysis(String fileName) {
         File file = new File(fileName);
@@ -79,7 +75,8 @@ public class LexicalAnalysis {
         errors.add(new Error(error, scanner.getLineNum(), scanner.getColNum()));
     }
 
-    public void analyze() {
+    public List<Token> analyze() {
+        List<Token> tokens = new ArrayList<>();
         scan();
         while (!scanner.isEOF()) {
             Token t = null;
@@ -398,5 +395,6 @@ public class LexicalAnalysis {
              tokens.add(t);
         }
         tokens.add(new Token(END));
+        return tokens;
     }
 }

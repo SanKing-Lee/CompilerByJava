@@ -1,0 +1,55 @@
+<program>-><segment> <program>|null
+<segment>->KW_EXTERN <segment'>|<segment'>
+<segment'>-><type> <def>
+<type>->KW_INT|KW_CHAR|KW_VOID
+<defdata>->ID <varrdef>|MUL ID <init>
+<varrdef>->LBRACK NUM RBRACK|<init>
+<init>->ASSIGN <expr>|null
+<def>->ID <idtail>|MUL ID <init> <deflist>
+<deflist>->COMMA <defdata> <deflist>|SEMICON
+<idtail>-><varrdef> <deflist>|LPAREN <para> RPAREN <funtail>
+<funtail>->SEMICON|<block>
+<paradata>->MUL ID|ID <paradatatail>
+<paradatatail>->LBRACK NUM RBRACK|null
+<paralist>->COMMA <type> <paradata> <paralist>|null
+<para>-><type> <paradata> <paralist>|null
+<block>->LBRACE <subprogram> RBRACE
+<subprogram>-><localdef> <subprogram>|<statement> <subprogram>|null
+<localdef>-><type> <defdata> <deflist>
+<assexpr>-><orexpr> <asstail>
+<asstail>->ASSIGN <orexpr> <asstail>|null
+<orexpr>-><andexpr> <ortail>
+<ortail>->OR <andexpr> <ortail>|null
+<andexpr>-><cmpexpr> <andtail>
+<andtail>->AND <cmpexpr> <andtail> | null
+<cmpexpr>-><aloexpr> <cmptail>
+<cmptail>-><cmps> <aloexpr> <cmptail>|null
+<cmps>->GT|GE|LT|LE|EQU|NEQU
+<aloexpr>-><item> <alotail>
+<alotail>-><adds> <item> <alotail>|null
+<adds>->ADD|SUB
+<item>-><factor> <itemtail>
+<itemtail>-><muls> <factor> <itemtail>|null
+<muls>->MUL|DIV|MOD
+<factor>-><lop> <factor>|<val>|null
+<lop>->NOT|SUB|LEA|MUL|INC|DEC
+<val>-><elem> <rop>|null
+<rop>->INC|DEC|null
+<elem>->ID <idexpr>|LPAREN <expr> RPAREN|<literal>
+<idexpr>->LBRACK <expr> RBRACK|LPAREN <realarg> RPAREN|null
+<realarg>-><arg> <arglist>|null
+<arglist>->COMMA <arg> <arglist>|null
+<arg>-><expr>
+<literal>->NUM|CH|STR
+<expr>-><assexpr>
+<altexpr>-><expr>|null
+<statement>-><altexpr> SEMICON|<whilestat>|<forstat>|<dowhilestat>|<ifstat>|<switchstat>|KW_BREAK SEMICON|KW_CONTINUE SEMICON|KW_RETURN <altexpr> SEMICON
+<whilestat>->KW_WHILE LPAREN <altexpr> RPAREN <block>
+<dowhilestat>->KW_DO <block> KW_WHILE LPAREN <altexpr> RPAREN SEMICON
+<forstat>->KW_FOR LPAREN <forinit> <altexpr> SEMICON <altexpr> RPAREN <block>
+<forinit>-><localdef>|<altexpr> SEMICON
+<ifstat>-> KW_IF LPAREN <expr> RPAREN <block> <elsestat>
+<elsestat>-> KW_ELSE <block>|null
+<switchstat>->KW_SWITCH LPAREN <expr> RPAREN LBRACK <casestat> RBRACK
+<casestat>->KW_CASE <caselable> COLON <subprogram> <casestat>|KW_DEFAULT COLON <subprogram>
+<caselable>-><literal>
