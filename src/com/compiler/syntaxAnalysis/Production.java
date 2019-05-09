@@ -16,91 +16,57 @@ import java.util.Properties;
  */
 
 public class Production {
-    private NonTerminal left;
-    private List<Symbol> right;
+    private Integer id;
+    private String left;
+    private List<String> right;
 
-    public Production(NonTerminal left, List<Symbol> right) {
+    public Production(Integer id, String left, List<String> right) {
+        this.id = id;
         this.left = left;
         this.right = right;
     }
 
-    public NonTerminal getLeft() {
+    public String getLeft() {
         return left;
     }
 
-    public void setLeft(NonTerminal left) {
+    public void setLeft(String left) {
         this.left = left;
     }
 
-    public List<Symbol> getRight() {
+    public List<String> getRight() {
         return right;
     }
 
-    public void setRight(List<Symbol> right) {
+    public void setRight(List<String> right) {
         this.right = right;
     }
 
-    public String toString() {
-        String ret = left.getName() + "->";
-        for (int i = 0; i < right.size(); i++) {
-            ret += right.get(i).getName();
-            if (i < right.size() - 1) {
-                ret += " ";
+    public String toString(){
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(id + ": " + left + "->");
+        for(int i = 0; i < right.size(); i++){
+            stringBuilder.append(right.get(i));
+            if(i < right.size()-1){
+                stringBuilder.append(" ");
             }
         }
-        return ret;
-    }
-}
-
-abstract class Symbol {
-    private String name;
-    private boolean terminal;
-
-    public Symbol(String name, boolean terminal) {
-        this.name = name;
-        this.terminal = terminal;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public boolean isTerminal() {
-        return terminal;
-    }
-
-    public void setTerminal(boolean terminal) {
-        this.terminal = terminal;
-    }
-
-    public String toString() {
-        return name;
+        return stringBuilder.toString();
     }
 
     public boolean equals(Object obj){
         if(obj == null){
             return false;
         }
-        Symbol objSymbol = (Symbol)obj;
-        return name.equals(objSymbol.getName());
+        Production proObj = (Production)obj;
+        return toString().equals(proObj.toString());
     }
-}
 
-class NonTerminal extends Symbol {
-    public NonTerminal(String name) {
-        super(name, false);
+    public Integer getId() {
+        return id;
     }
-}
 
-class Terminal extends Symbol {
-    private Tag tag;
-
-    public Terminal(String name) {
-        super(name, true);
-        this.tag = Enum.valueOf(Tag.class, name);
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

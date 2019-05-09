@@ -16,85 +16,48 @@ import java.util.Map;
  */
 
 public class AnalyzeTable {
-    private HashMap<Header, Production> anylzeTable = new HashMap<>();
+    private HashMap<String, HashMap<String, Production>> analyzeTable = new HashMap<>();
 
-    public AnalyzeTable(HashMap<String, NonTerminal> nonTerminalList, HashMap<String, Terminal> terminalList)
+    public AnalyzeTable(List<String> nonTerminals, List<String> terminals)
     {
-        // initial table
-        for(Map.Entry<String, NonTerminal> nonTerminalEntry: nonTerminalList.entrySet()){
-            for(Map.Entry<String, Terminal> terminalEntry: terminalList.entrySet()){
-                anylzeTable.put(new Header(nonTerminalEntry.getValue(), terminalEntry.getValue()), null);
+        for(int i = 0; i < nonTerminals.size(); i++){
+            HashMap<String, Production> analyzeEntry = new HashMap<>();
+            for(int j = 0; j < terminals.size(); j++){
+                analyzeEntry.put(terminals.get(j), null);
             }
+            analyzeTable.put(nonTerminals.get(i), analyzeEntry);
         }
     }
 
-    public void setProduction(NonTerminal row, Terminal column, Production production){
-        Header header = new Header(row, column);
-        if(!anylzeTable.containsKey(header)){
-            System.out.println("不存在该表头");
+    public void setProduction(String nonTerminal, String terminal, Production production){
+        HashMap<String, Production> analyzeEntry = analyzeTable.getOrDefault(nonTerminal, null);
+        if(analyzeEntry == null){
             return;
         }
-        if(anylzeTable.putIfAbsent(header, production) != null){
-            System.out.println(row.getName() + ", " + column.getName() + ": " + "该位置已存在产生式");
-        }
+        analyzeEntry.putIfAbsent(terminal, production);
     }
 
-    public Production getProduction(NonTerminal row, Terminal column){
-        Header header = new Header(row, column);
-        return anylzeTable.getOrDefault(header, null);
+    public Production getProduction(String row, String column){
+        return analyzeTable.get(row).get(column);
     }
 
     public String toString(){
         StringBuilder stringBuilder = new StringBuilder();
-        for(Map.Entry<Header, Production> entry : anylzeTable.entrySet()){
-            Header header = entry.getKey();
-            Production production = entry.getValue();
-            String sPro;
-            if(production == null){
-                sPro = "null";
+        for(Map.Entry<String, HashMap<String, Production>> entry: analyzeTable.entrySet()){
+            stringBuilder.append(String.format("%-14s: ", entry.getKey()));
+            for(Map.Entry<String, Production> entry1 : entry.getValue().entrySet()){
+                String sPro;
+                Production production = entry1.getValue();
+                if(production == null){
+                    sPro = "null";
+                }
+                else{
+                    sPro = production.getId().toString();
+                }
+                stringBuilder.append( String.format("%8s: %-4s\t", entry1.getKey(), sPro));
             }
-            else{
-                sPro = production.toString();
-            }
-            stringBuilder.append( "(" + header.getRow().getName() + ", "
-                    + header.getColumn() + "): " + sPro + "\n");
+            stringBuilder.append("\n");
         }
         return stringBuilder.toString();
-    }
-
-    class Header{
-        NonTerminal row;
-        Terminal column;
-
-        public Header(NonTerminal row, Terminal column) {
-            this.row = row;
-            this.column = column;
-        }
-
-        @Override
-        public boolean equals(Object obj){
-            if(obj == null){
-                return false;
-            }
-            Header objHeader = (Header)obj;
-            return (row.getName().equals(objHeader.getRow().getName())
-                    && column.getName().equals(objHeader.getColumn().getName()));
-        }
-
-        public NonTerminal getRow() {
-            return row;
-        }
-
-        public void setRow(NonTerminal row) {
-            this.row = row;
-        }
-
-        public Terminal getColumn() {
-            return column;
-        }
-
-        public void setColumn(Terminal column) {
-            this.column = column;
-        }
     }
 }

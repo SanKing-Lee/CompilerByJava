@@ -21,9 +21,9 @@ public enum Tag {
     INC, DEC,
     GT, GE, LT, LE, EQU, NEQU,
     AND, OR,
-    LPAREN, RPAREN,
-    LBRACK, RBRACK,
-    LBRACE, RBRACE,
+    LPAREN, RPAREN, // ( )
+    LBRACK, RBRACK, // [ ]
+    LBRACE, RBRACE, // { }
     COMMA, COLON, SEMICON,
     ASSIGN,
     KW_IF, KW_ELSE,

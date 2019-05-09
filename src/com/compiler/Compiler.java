@@ -1,6 +1,7 @@
 package com.compiler;
 
 import com.compiler.syntaxAnalysis.GrammarAnalysis;
+import com.compiler.syntaxAnalysis.SyntaxAnalysis;
 import sun.awt.Symbol;
 
 import java.io.File;
@@ -19,7 +20,7 @@ import static com.compiler.lexicalAnalysis.Tag.RBRACE;
 
 public class Compiler {
     public static void main(String[] args){
-        GrammarAnalysis grammarAnalysis = new GrammarAnalysis("Grammar.txt");
-        grammarAnalysis.generateAnalyzeTable();
+        SyntaxAnalysis syntaxAnalysis = new SyntaxAnalysis();
+        syntaxAnalysis.analyze();
     }
 }

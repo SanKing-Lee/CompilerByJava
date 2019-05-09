@@ -22,6 +22,11 @@ public class LexicalAnalysis {
     private Scanner scanner;
     private HashMap<String, Id> Ids = new HashMap<>();
     private ArrayList<Error> errors = new ArrayList<>();
+    private ArrayList<Token> tokens = new ArrayList<>();
+
+    public ArrayList<Token> getTokens() {
+        return tokens;
+    }
 
     public LexicalAnalysis(String fileName) {
         File file = new File(fileName);
@@ -389,19 +394,9 @@ public class LexicalAnalysis {
                 }
                 scan();
             }
-            System.out.println(t.toString());
-            if(t instanceof Id){
-                Ids.putIfAbsent(((Id)t).getName(), (Id)t);
-            }
+            // System.out.println(t.toString());
+             tokens.add(t);
         }
-        System.out.println("\n所有的标识符:");
-        Ids.forEach((name, id)->{
-            System.out.println(id.toString());
-        });
-
-        System.out.println("\n所有的错误:");
-        for(Error error : errors){
-            System.out.println(error.toString());
-        }
+        tokens.add(new Token(END));
     }
 }

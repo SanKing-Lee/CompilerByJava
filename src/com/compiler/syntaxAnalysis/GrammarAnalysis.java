@@ -1,12 +1,6 @@
 package com.compiler.syntaxAnalysis;
 
-import com.compiler.lexicalAnalysis.Token;
-import com.sun.xml.internal.bind.v2.model.core.NonElement;
-
-import java.awt.*;
 import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -25,21 +19,17 @@ import java.util.regex.Pattern;
 public class GrammarAnalysis {
     private static final String noneTerminalRegx = "<[a-z]+'*>";  // 非终结符的匹配模式
     private static final String terminalRegx = "([A-Z])+(_[A-Z]+)*";    // 终结符的匹配模式
+    private static final String nullRegx = "null";
+    private static int productionId = 0;
 
-    private List<Production> Productions = new ArrayList<>();
-    private List<NonTerminal> NonTerminals = new ArrayList<>();
-    private List<Terminal> Terminals = new ArrayList<>();
+    private List<Production> productions = new ArrayList<>();
+    private List<String> nullable = new ArrayList<>();
+    private HashMap<String, List<String>> first = new HashMap<>();
+    private HashMap<String, List<String>> follow = new HashMap<>();
+    private List<String> nonTerminals = new ArrayList<>();
+    private List<String> terminals = new ArrayList<>();
+    private HashMap<Integer, List<String>> select = new HashMap<>();
 
-
-    private HashMap<NonTerminal, List<Production>> productions = new HashMap<>();   // 从文法中读取到的所有产生式
-    private HashMap<String, NonTerminal> nonTerminals = new HashMap<>();
-    private HashMap<String, Terminal> terminals = new HashMap<>();
-
-    private HashMap<String, HashMap<String, Symbol>> FIRST = new HashMap<>();    // 所有非终结符的FIRST集
-    private HashMap<Production, HashMap<String, Symbol>> PRODUCTION_FIRST = new HashMap<>();
-    private HashMap<String, HashMap<String, Symbol>> FOLLOW = new HashMap<>();   // 所有非终结符的FOLLOW集
-    private HashMap<String, HashMap<String, Symbol>> SELECT = new HashMap<>();   // 所有非终结符的SELECT集
-    private HashMap<String, NonTerminal> NULLABLE = new HashMap<>();                 // 空集
 
     private String sGrammarFile;                          // 文法文件名
     private File grammarFile;                               // 文法文件
@@ -53,10 +43,11 @@ public class GrammarAnalysis {
         this.sGrammarFile = file;
         this.grammarFile = new File(file);
         grammar2Productions();
-//        initNullable();
-//        initFirst();
-//        initFollow();
-//        initProFirst();
+        initNullable();
+        initFirst();
+        initFollow();
+        initSelect();
+        writeToFile("information.txt");
     }
 
     /**
@@ -79,18 +70,18 @@ public class GrammarAnalysis {
                 String line = scanner.nextLine();
                 parseProduction(line);
             }
-            System.out.println("所有产生式：");
-            for(int i = 0; i < Productions.size();i++){
-                System.out.println(Productions.get(i));
-            }
-            System.out.println("所有非终结符: " + NonTerminals.size());
-            for(int i = 0; i < NonTerminals.size(); i++){
-                System.out.println(NonTerminals.get(i).getName());
-            }
-            System.out.println("所有终结符: " + Terminals.size());
-            for(int i = 0; i < Terminals.size(); i++){
-                System.out.println(Terminals.get(i).getName());
-            }
+//            System.out.println("所有产生式：" + productions.size());
+//            for (int i = 0; i < productions.size(); i++) {
+//                System.out.println(productions.get(i));
+//            }
+//            System.out.println("所有非终结符: " + nonTerminals.size());
+//            for (int i = 0; i < nonTerminals.size(); i++) {
+//                System.out.println(nonTerminals.get(i));
+//            }
+//            System.out.println("所有终结符: " + terminals.size());
+//            for (int i = 0; i < terminals.size(); i++) {
+//                System.out.println(terminals.get(i));
+//            }
         } catch (FileNotFoundException e) {
             System.out.println("未找到该文件！");
             e.printStackTrace();
@@ -110,49 +101,33 @@ public class GrammarAnalysis {
         // 分解右部
         String[] results = right.split("\\|");
 
-        String sLeft = match(left, noneTerminalRegx);
-        NonTerminal leftNoneTerminal = new NonTerminal(sLeft);
-        nonTerminals.putIfAbsent(sLeft, leftNoneTerminal);
-        if(!NonTerminals.contains(leftNoneTerminal)){
-            NonTerminals.add(leftNoneTerminal);
-        }
-
-        List<Production> nonTerminalProductions =
-                productions.getOrDefault(leftNoneTerminal.getName(), new ArrayList<>());
         // 遍历所有右部
         for (int i = 0; i < results.length; i++) {
             // 分解每个右部为符号串
             String[] symbols = results[i].split(" ");
-            List<Symbol> lSymbols = new ArrayList<>();
+            List<String> rightPart = new ArrayList<>();
             // 遍历符号串中的每个符号并进行匹配
             for (int j = 0; j < symbols.length; j++) {
-                String symbol = match(symbols[j], noneTerminalRegx);
-                if (symbol != null) {
-                    NonTerminal rightPartNoneTerimal = new NonTerminal(symbol);
-                    lSymbols.add(rightPartNoneTerimal);
-                    nonTerminals.putIfAbsent(symbol, rightPartNoneTerimal);
-                    if(!NonTerminals.contains(rightPartNoneTerimal)){
-                        NonTerminals.add(rightPartNoneTerimal);
+                String symbol = symbols[j];
+                if (isTerminal(symbol) || isNonTerminal(symbol) || isNull(symbol)) {
+                    rightPart.add(symbol);
+                }
+                if (isTerminal(symbol)) {
+                    if (!terminals.contains(symbol)) {
+                        terminals.add(symbol);
                     }
                 }
-                symbol = match(symbols[j], terminalRegx);
-                if (symbol != null) {
-                    Terminal rightPartTerminal = new Terminal(symbol);
-                    lSymbols.add(rightPartTerminal);
-                    terminals.putIfAbsent(symbol, rightPartTerminal);
-                    if(!Terminals.contains(rightPartTerminal)){
-                        Terminals.add(rightPartTerminal);
+                if (isNonTerminal(symbol)) {
+                    if (!nonTerminals.contains(symbol)) {
+                        nonTerminals.add(symbol);
                     }
                 }
             }
-            Production cProduction = new Production(leftNoneTerminal, lSymbols);
-            if(!Productions.contains(cProduction)){
-                Productions.add(cProduction);
+            Production cProduction = new Production(productionId++, left, rightPart);
+            if (!productions.contains(cProduction)) {
+                productions.add(cProduction);
             }
-
-            nonTerminalProductions.add(cProduction);
         }
-        productions.putIfAbsent(leftNoneTerminal, nonTerminalProductions);
     }
 
     /**
@@ -171,20 +146,34 @@ public class GrammarAnalysis {
         return null;
     }
 
-    /**
-     * 集合的并运算
-     *
-     * @param map1 将第二个集合并入该集合
-     * @param map2 被并入到第一个集合的集合
-     * @return 这个操作是否导致了第一个集合的改变
-     */
-    private boolean unionMaps(HashMap<String, Symbol> map1, HashMap<String, Symbol> map2) {
+    private boolean isTerminal(String str) {
+        return match(str, terminalRegx) != null;
+    }
+
+    private boolean isNonTerminal(String str) {
+        return match(str, noneTerminalRegx) != null;
+    }
+
+    private boolean isNull(String str) {
+        return match(str, nullRegx) != null;
+    }
+
+    private boolean unionList(List<String> list1, List<String> list2) {
         boolean flag = false;
-        for (Map.Entry<String, Symbol> entry : map2.entrySet()) {
-            if (!map1.containsKey(entry.getKey())) {
-                map1.put(entry.getKey(), entry.getValue());
+        for (String str : list2) {
+            if (!list1.contains(str)) {
+                list1.add(str);
                 flag = true;
             }
+        }
+        return flag;
+    }
+
+    private boolean addDistinct(List<String> list, String symbol){
+        boolean flag = false;
+        if(!list.contains(symbol)){
+            list.add(symbol);
+            flag = true;
         }
         return flag;
     }
@@ -208,51 +197,40 @@ public class GrammarAnalysis {
         boolean changing = true;
         while (changing) {
             changing = false;
-            // 遍历所有的非终结符及它们的产生式
-            for (Map.Entry<NonTerminal, List<Production>> entry : productions.entrySet()) {
-                NonTerminal noneTerminal = entry.getKey();
-                List<Production> productions = entry.getValue();
-                // 遍历所有的非终结符的产生式
-                for (Production production : productions) {
-                    boolean allNullableNonTerminal = true;
-                    // 遍历产生式中的所有符号
-                    for (Symbol symbol : production.getRight()) {
-                        // 如果该符号为一个终结符
-                        if (symbol.isTerminal()) {
-                            // 说明该条产生式不是全为非终结符，肯定不适合第二种情况
+            // 遍历所有的非终结符的产生式
+            for (Production production : productions) {
+                String left = production.getLeft();
+                // 如果该产生式为一条空产生式
+                if(isNullProduction(production)){
+                    changing = (addDistinct(nullable, left)) || changing;
+                }
+                boolean allNullableNonTerminal = true;
+                // 遍历产生式中的所有符号
+                for (String symbol : production.getRight()) {
+                    // 如果该符号为一个终结符
+                    if (isTerminal(symbol)) {
+                        // 说明该条产生式不是全为非终结符，肯定不适合第二种情况
+                        allNullableNonTerminal = false;
+                        break;
+                    } else {
+                        // 如果该符号为一个非终结符，但是该终结符并不属于空集，则不满足第二种情况也肯定不会满足第一种情况，
+                        // 所以直接跳出循环
+                        if (!nullable.contains(symbol)) {
                             allNullableNonTerminal = false;
-                            // 该终结符是一个空符，就把该非终结符加入NULLABLE集合中并置changing为true
-                            if (symbol.getName().equals("NULL")) {
-                                if (!NULLABLE.containsKey(noneTerminal.getName())) {
-                                    NULLABLE.putIfAbsent(noneTerminal.getName(), noneTerminal);
-                                    changing = true;
-                                }
-                            }
-                            // 说明该条产生式也不符合第一种情况，跳出循环
                             break;
-                        } else {
-                            // 如果该符号为一个非终结符，但是该终结符并不属于空集，则不满足第二种情况也肯定不会满足第一种情况，
-                            // 所以直接跳出循环
-                            if (!NULLABLE.containsKey(symbol.getName())) {
-                                allNullableNonTerminal = false;
-                                break;
-                            }
-                        }
-                    }
-                    // 满足第二种情况
-                    if (allNullableNonTerminal) {
-                        if (!NULLABLE.containsKey(noneTerminal.getName())) {
-                            NULLABLE.putIfAbsent(noneTerminal.getName(), noneTerminal);
-                            changing = true;
                         }
                     }
                 }
+                // 满足第二种情况
+                if (allNullableNonTerminal) {
+                    changing = (addDistinct(nullable, left)) || changing;
+                }
             }
         }
-        System.out.println("所有的可空非终结符: ");
-        for (Map.Entry<String, NonTerminal> entry : NULLABLE.entrySet()) {
-            System.out.println(entry.getKey());
-        }
+//        System.out.println("所有的可空非终结符: " + nullable.size());
+//        for (int i = 0; i < nullable.size(); i++) {
+//            System.out.println(nullable.get(i));
+//        }
     }
 
     /**
@@ -272,7 +250,7 @@ public class GrammarAnalysis {
 //              foreach (βi from β1 upto βn)
 //                if (βi== a …)
 //                    FIRST(N) ∪= {a}
-//                break
+//                    break
 //                if (βi== M …)
 //                    FIRST(N) ∪= FIRST(M)
 //                if (M is not in NULLABLE)
@@ -280,108 +258,45 @@ public class GrammarAnalysis {
         boolean changing = true;
         while (changing) {
             changing = false;
-            // 遍历所有的非终结符及它们的产生式
-            for (Map.Entry<NonTerminal, List<Production>> entry : productions.entrySet()) {
-                NonTerminal noneTerminal = entry.getKey();
-                List<Production> productions = entry.getValue();
-                HashMap<String, Symbol> first = FIRST.getOrDefault(noneTerminal.getName(), new HashMap<>());
-                // 遍历所有产生式
-                for (Production production : productions) {
-                    List<Symbol> symbols = production.getRight();
-                    for (int i = 0; i < symbols.size(); i++) {
-                        Symbol symbol = symbols.get(i);
-                        // 以终结符开头且该终结符没有在该非终结符的first集中出现
-                        if (symbol.isTerminal()) {
-                            if (!first.containsKey(symbol.getName())) {
-                                first.put(symbol.getName(), symbol);
-                                changing = true;
-                            }
+            // 遍历所有产生式
+            for (Production production : productions) {
+                String left = production.getLeft();
+                List<String> symbols = production.getRight();
+                List<String> proFirst = first.getOrDefault(left, new ArrayList<>());
+                for (int j = 0; j < symbols.size(); j++) {
+                    String symbol = symbols.get(j);
+                    // 以终结符开头且该终结符没有在该非终结符的first集中出现
+                    if (isTerminal(symbol)) {
+                        changing = (addDistinct(proFirst, symbol)) || changing;
+                        break;
+                    } else {
+                        List<String> otherSymbols = first.getOrDefault(symbol, new ArrayList<>());
+                        changing = unionList(proFirst, otherSymbols) || changing;
+                        if (!nullable.contains(symbol)) {
                             break;
-                        } else {
-                            HashMap<String, Symbol> otherSymbols = FIRST.getOrDefault(symbol.getName(), null);
-                            if (otherSymbols != null) {
-                                for (Map.Entry<String, Symbol> entry1 : otherSymbols.entrySet()) {
-                                    if (!first.containsKey(entry1.getKey())) {
-                                        first.put(entry1.getKey(), entry1.getValue());
-                                        changing = true;
-                                    }
-                                }
-                            }
-                            if (!NULLABLE.containsKey(symbol.getName())) {
-                                break;
-                            }
                         }
                     }
                 }
-                FIRST.putIfAbsent(noneTerminal.getName(), first);
+                first.put(left, proFirst);
             }
         }
-        System.out.println("\n所有非终结符的FIRST集：");
-        for (Map.Entry<String, HashMap<String, Symbol>> entry : FIRST.entrySet()) {
-            System.out.print(entry.getKey() + ": ");
-            for (Map.Entry<String, Symbol> entry1 : entry.getValue().entrySet()) {
-                System.out.print(entry1.getKey() + " ");
-            }
-            System.out.println();
-        }
+//        System.out.println("所有非终结符的First集：");
+//        for (Map.Entry<String, List<String>> entry : first.entrySet()) {
+//            System.out.print(entry.getKey() + ": ");
+//            List<String> symbols = entry.getValue();
+//            for (int i = 0; i < symbols.size(); i++) {
+//                System.out.print(symbols.get(i) + " ");
+//            }
+//            System.out.println();
+//        }
     }
 
-    private void initProFirst(){
-        boolean changing = true;
-        while (changing) {
-            changing = false;
-            // 遍历所有的非终结符及它们的产生式
-            for (Map.Entry<NonTerminal, List<Production>> entry : productions.entrySet()) {
-                NonTerminal noneTerminal = entry.getKey();
-                List<Production> productions = entry.getValue();
-                HashMap<String, Symbol> first = PRODUCTION_FIRST.getOrDefault(noneTerminal.getName(), new HashMap<>());
-                // 遍历所有产生式
-                for (Production production : productions) {
-                    List<Symbol> symbols = production.getRight();
-                    for (int i = 0; i < symbols.size(); i++) {
-                        Symbol symbol = symbols.get(i);
-                        // 以终结符开头且该终结符没有在该非终结符的first集中出现
-                        if (symbol.isTerminal()) {
-                            if (!first.containsKey(symbol.getName())) {
-                                first.put(symbol.getName(), symbol);
-                                changing = true;
-                            }
-                            break;
-                        } else {
-                            HashMap<String, Symbol> otherSymbols = PRODUCTION_FIRST.getOrDefault(symbol.getName(), null);
-                            if (otherSymbols != null) {
-                                for (Map.Entry<String, Symbol> entry1 : otherSymbols.entrySet()) {
-                                    if (!first.containsKey(entry1.getKey())) {
-                                        first.put(entry1.getKey(), entry1.getValue());
-                                        changing = true;
-                                    }
-                                }
-                            }
-                            if (!NULLABLE.containsKey(symbol.getName())) {
-                                break;
-                            }
-                        }
-                    }
-                    PRODUCTION_FIRST.putIfAbsent(production, first);
-                }
-            }
-        }
-        System.out.println("所有产生式的FIRST集：");
-        for(Map.Entry<Production, HashMap<String, Symbol>> entry: PRODUCTION_FIRST.entrySet()){
-            Production production = entry.getKey();
-            HashMap<String, Symbol> symbolHashMap = entry.getValue();
-            System.out.print(production.toString() + ": ");
-            for(Map.Entry<String, Symbol> entry1:symbolHashMap.entrySet()) {
-                System.out.println(entry1.getKey());
-            }
-        }
-    }
     /**
      * 初始化FOLLOW集
      */
     private void initFollow() {
-//        foreach (nonterminal N)
-//            FOLLOW(N) = { }
+        //        foreach (nonterminal N)
+        //            FOLLOW(N) = { }
 //            while(some set is changing)
 //                foreach (production p: N->β1 … βn)
 //                    temp = FOLLOW(N)
@@ -397,73 +312,212 @@ public class GrammarAnalysis {
         // 遍历所有的非终结符及它们的产生式
         // foreach(nonterminal N)
 //        System.out.println("所有非终结符的FOLLOW集：");
-        HashMap<String, Symbol> programFollow = new HashMap<>();
-        programFollow.put("END", new Terminal("END"));
-        FOLLOW.put("<program>", programFollow);
-        for (Map.Entry<NonTerminal, List<Production>> entry : productions.entrySet()) {
-            NonTerminal nonTerminal = entry.getKey();
-            List<Production> lProductions = entry.getValue();
-            // FOLLOW(N)={}
-            HashMap<String, Symbol> Follow = FOLLOW.getOrDefault(nonTerminal.getName(), new HashMap<>());
-            boolean changing = true;
-            // while some set is changing
-            while (changing) {
-                changing = false;
-                // 遍历所有产生式
-                // foreach(production)
-                for (Production production : lProductions) {
-                    HashMap<String, Symbol> temp = Follow;
-                    List<Symbol> symbols = production.getRight();
-                    // from n down to 0
-                    for (int i = symbols.size() - 1; i >= 0; i--) {
-                        Symbol symbol = symbols.get(i);
-                        // terminal
-                        if (symbol.isTerminal()) {
-                            HashMap<String, Symbol> terminalTemp = new HashMap<>();
-                            terminalTemp.put(symbol.getName(), symbol);
-                            temp = terminalTemp;
-                        }
-                        // nonTerminal
-                        else {
-                            HashMap<String, Symbol> nonTerFollow = FOLLOW.getOrDefault(symbol.getName(), new HashMap<>());
-                            changing = (unionMaps(nonTerFollow, temp)) || changing;
-                            FOLLOW.putIfAbsent(symbol.getName(), nonTerFollow);
-                            HashMap<String, Symbol> nonTerFirst = FIRST.getOrDefault(symbol.getName(), new HashMap<>());
-                            if (!NULLABLE.containsKey(symbol.getName())) {
-                                temp = nonTerFirst;
-                            } else {
-                                unionMaps(temp, nonTerFirst);
-                            }
+
+        for (String nonTerminal : nonTerminals) {
+            follow.put(nonTerminal, new ArrayList<>());
+        }
+
+        List<String> programFollow = new ArrayList<>();
+        programFollow.add("END");
+        follow.put("<program>", programFollow);
+        boolean changing = true;
+        // while some set is changing
+        while (changing) {
+            changing = false;
+            // 遍历所有产生式
+            // foreach(production)
+            for (Production production : productions) {
+                List<String> temp = follow.getOrDefault(production.getLeft(), new ArrayList<>());
+                List<String> symbols = production.getRight();
+                // from n down to 0
+                for (int k = symbols.size() - 1; k >= 0; k--) {
+                    String symbol = symbols.get(k);
+                    // terminal
+                    if (isTerminal(symbol)) {
+                        // temp = {symbol}
+                        List<String> terminalTemp = new ArrayList<>();
+                        terminalTemp.add(symbol);
+                        temp = terminalTemp;
+                    }
+                    // nonTerminal
+                    else {
+                        List<String> nonTerSymbFollow = follow.getOrDefault(symbol, new ArrayList<>());
+                        changing = (unionList(nonTerSymbFollow, temp)) || changing;
+                        follow.put(symbol, nonTerSymbFollow);
+
+                        List<String> nonTerSymbFirst = first.getOrDefault(symbol, new ArrayList<>());
+                        if (!nullable.contains(symbol)) {
+                            temp = nonTerSymbFirst;
+                        } else {
+                            unionList(temp, nonTerSymbFirst);
                         }
                     }
-                    // FOLLOW.putIfAbsent(nonTerminal.getName(), temp);
                 }
+                // FOLLOW.putIfAbsent(nonTerminal.getName(), temp);
             }
-//            System.out.println(nonTerminal.getName() + ": ");
-//            Follow.forEach((name, symbol) ->
-//                    System.out.print(name + " ")
-//            );
         }
-        System.out.println("\n所有非终结符的FOLLOW集：");
-        for (Map.Entry<String, HashMap<String, Symbol>> entry : FOLLOW.entrySet()) {
-            System.out.print(entry.getKey() + ": ");
-            for (Map.Entry<String, Symbol> entry1 : entry.getValue().entrySet()) {
-                System.out.print(entry1.getKey() + " ");
+//        System.out.println("所有非终结符的FOLLOW集：");
+//        for (Map.Entry<String, List<String>> entry : follow.entrySet()) {
+//            System.out.print(entry.getKey() + ": ");
+//            for (String symbol : entry.getValue()) {
+//                System.out.print(symbol + " ");
+//            }
+//            System.out.println();
+//        }
+    }
+
+    //    calculte_FIRST_S(production p: N->β1 …βn)
+//      foreach(βi from β1to βn)
+//          if (βi== a …)
+//              FIRST_S(p) ∪= {a}
+//             return;
+//          if (βi== M …)
+//              FIRST_S(p) ∪= FIRST(M)
+//             if (M is not NULLABLE)
+//            return;
+//      FIRST_S(p) ∪= FOLLOW(N)
+    public void initSelect() {
+        for (Production production : productions) {
+            select.put(production.getId(), new ArrayList<>());
+        }
+
+        for (Production production : productions) {
+            String left = production.getLeft();
+            List<String> symbols = production.getRight();
+            List<String> sel = select.get(production.getId());
+            // 如果该产生式是空产生式，select = follow
+            if (isNullProduction(production)) {
+                sel = follow.getOrDefault(left, new ArrayList<>());
+                select.put(production.getId(), sel);
+                continue;
             }
-            System.out.println();
+            // 遍历产生式右部的符号
+            for (int i = 0; i < symbols.size(); i++) {
+                String symbol = symbols.get(i);
+                // 如果遇到了一个终结符，加入sel并break;
+                if (isTerminal(symbol)) {
+                    if (!sel.contains(symbol)) {
+                        sel.add(symbol);
+                        select.put(production.getId(), sel);
+                        break;
+                    }
+                } else {
+                    // 遇到了一个非终结符，将该非终结符的first集加入sel中
+                    List<String> nonTerFirst = first.getOrDefault(symbol, new ArrayList<>());
+                    unionList(sel, nonTerFirst);
+                    select.put(production.getId(), sel);
+                    // 如果该非终结符不是可空的，则结束
+                    if (!nullable.contains(symbol)) {
+                        break;
+                    }
+                }
+                // 如果所有的符号都为非终结符且都是可空的，则将产生式左部的非终结符的Follow集加入sel;
+                unionList(sel, follow.getOrDefault(symbol, new ArrayList<>()));
+                select.put(production.getId(), sel);
+            }
+//            List<String> sel = select.get(production.getId());
+//            unionList(sel, follow.getOrDefault(production.getLeft(), new ArrayList<>()));
+//            select.put(production.getId(), sel);
         }
+//        for(Map.Entry<Integer, List<String>> entry: select.entrySet()){
+//            System.out.print(getProductionById(entry.getKey()).toString() + ": ");
+//            for(String symbol: entry.getValue()){
+//                System.out.print(symbol + " ");
+//            }
+//            System.out.println();
+//        }
+    }
+
+    private Production getProductionById(int id) {
+        for (Production production : productions) {
+            if (production.getId() == id) {
+                return production;
+            }
+        }
+        return null;
+    }
+
+    private boolean isNullProduction(Production production) {
+        return production.getRight().get(0).equals(nullRegx);
     }
 
     public AnalyzeTable generateAnalyzeTable() {
         AnalyzeTable analyzeTable = new AnalyzeTable(nonTerminals, terminals);
+        for (Map.Entry<Integer, List<String>> entry : select.entrySet()) {
+            Production production = getProductionById(entry.getKey());
+            List<String> symbols = entry.getValue();
+            for (int i = 0; i < symbols.size(); i++) {
+//                System.out.println(production.getLeft() + " " + symbols.get(i));
+                analyzeTable.setProduction(production.getLeft(), symbols.get(i), production);
+            }
+        }
 //        System.out.println(analyzeTable.toString());
-//        for (Map.Entry<NonTerminal, List<Production>> entry : productions.entrySet()) {
-//            NonTerminal nonTerminal = entry.getKey();
-//            List<Production> productionList = entry.getValue();
-//            for(Production production : productionList){
-//            }
-//        }
         return analyzeTable;
     }
 
+    public void writeToFile(String informationFile) {
+        File file = new File(informationFile);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                System.out.println("创建信息文件失败！");
+                e.printStackTrace();
+            }
+        }
+        try {
+            PrintWriter printWriter = new PrintWriter(informationFile, "UTF-8");
+            printWriter.println("所有的产生式：");
+            for (Production production : productions) {
+                printWriter.println(production.toString());
+            }
+            printWriter.println();
+            printWriter.println("所有非终结符: ");
+            for (String symbol : nonTerminals) {
+                printWriter.println(symbol);
+            }
+            printWriter.println();
+            printWriter.println("所有终结符: ");
+            for (String symbol : terminals) {
+                printWriter.println(symbol);
+            }
+            printWriter.println();
+            printWriter.println("所有可空非终结符: ");
+            for (String symbol : nullable) {
+                printWriter.println(symbol);
+            }
+            printWriter.println();
+            printWriter.println("FIRST集：");
+            for (Map.Entry<String, List<String>> entry : first.entrySet()) {
+                printWriter.print(entry.getKey() + ": ");
+                for (String str : entry.getValue()) {
+                    printWriter.print(str + " ");
+                }
+                printWriter.println();
+            }
+            printWriter.println();
+            printWriter.println("FOLLOW集：");
+            for (Map.Entry<String, List<String>> entry : follow.entrySet()) {
+                printWriter.print(entry.getKey() + ": ");
+                for (String str : entry.getValue()) {
+                    printWriter.print(str + " ");
+                }
+                printWriter.println();
+            }
+            printWriter.println();
+            printWriter.println("SELECT集: ");
+            for (Map.Entry<Integer, List<String>> entry : select.entrySet()) {
+                printWriter.print(getProductionById(entry.getKey()) + ": ");
+                for (String str : entry.getValue()) {
+                    printWriter.print(str + " ");
+                }
+                printWriter.println();
+            }
+            printWriter.println();
+            printWriter.println("预测分析表：");
+            printWriter.println(generateAnalyzeTable().toString());
+        } catch (UnsupportedEncodingException | FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 }

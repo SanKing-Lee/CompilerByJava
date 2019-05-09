@@ -14,17 +14,8 @@ import java.util.List;
  */
 
 public class GrammarTreeNode {
-    private Symbol symbol;
-    private List<GrammarTreeNode> Childrens;
-    private HashMap<NonTerminal, List<Production>> productions;
-
-    public GrammarTreeNode(Symbol symbol, HashMap<NonTerminal, List<Production>> productions) {
-        this.symbol = symbol;
-        this.productions = productions;
-        if(!symbol.isTerminal()){
-            NonTerminal nonTerminal = (NonTerminal)symbol;
-        }
-    }
-
-
+    private int id;
+    private String name;
+    private GrammarTreeNode parent;
+    private List<GrammarTreeNode> children;
 }
