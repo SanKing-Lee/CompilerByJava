@@ -2,6 +2,7 @@ package com.compiler.syntaxAnalysis;
 
 import com.compiler.lexicalAnalysis.Tag;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -19,11 +20,20 @@ public class Production {
     private Integer id;
     private String left;
     private List<String> right;
+    private boolean sync;
 
     public Production(Integer id, String left, List<String> right) {
         this.id = id;
         this.left = left;
         this.right = right;
+        this.sync = false;
+    }
+
+    public Production(boolean sync){
+        id = 0;
+        left = "";
+        right = new ArrayList<>();
+        this.sync = sync;
     }
 
     public String getLeft() {
@@ -68,5 +78,13 @@ public class Production {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public boolean isSync() {
+        return sync;
+    }
+
+    public void setSync(boolean sync) {
+        this.sync = sync;
     }
 }

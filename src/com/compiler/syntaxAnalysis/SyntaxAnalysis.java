@@ -56,8 +56,12 @@ public class SyntaxAnalysis {
     }
 
     /**
-     * 分析程序，
-     * @return
+     * 分析程序，t为当前的栈顶符号，token为当前的词法记号
+     * 1.   如果当前的词法记号是一个终结符，则将它和栈顶符号进行比较，如果是一样的，则将栈顶符号弹出，如果不匹配，则报错
+     * 2.   如果当前的词法记号是一个非终结符，则将它从栈顶弹出，并从分析表中找到对应的产生式，将产生式的右部符号全部压入栈内
+     *      如果没有找到产生式，则报错，并弹出当前的栈顶符号，令token等于下一个词法记号，直到找到匹配的产生式为止
+     * 3.   分析栈为空，则说明成功分析完了所有的词法记号，accept
+     * @return  生成的语法树的根结点
      */
     public DefaultMutableTreeNode analyze() {
         scan();
@@ -69,18 +73,26 @@ public class SyntaxAnalysis {
                     analyzeStack.pop();
                     treeStack.pop();
                 } else {
-                    System.out.println(token.getTag() + " not match " + t);
+                    System.out.println(token.getTag() + " does not match " + t);
+                    scan();
                 }
             } else if (isNonTerminal(t)) {
                 analyzeStack.pop();
                 currentNode = treeStack.pop();
 
-                System.out.println(t);
-                System.out.println(token.getTag().name());
+//                System.out.println(t);
+//                System.out.println(token.getTag().name());
                 Production production = analyzeTable.getProduction(t, token.getTag().name());
-                System.out.println(production);
+//                System.out.println(production);
+                // 错误恢复，如果当前的产生式为空，则将当前词法记号前移
                 if (production == null) {
                     System.out.println("Error: Null Production!");
+                    scan();
+                    continue;
+                }
+                // 如果当前的产生式为一条同步产生式，则将当前分析栈顶的终结符弹出
+                if (production.isSync()){
+                    System.out.println("Error: Synchronized");
                     analyzeStack.pop();
                     continue;
                 }
@@ -92,7 +104,7 @@ public class SyntaxAnalysis {
                         analyzeStack.push(symbol);
                         DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(symbol);
                         treeStack.push(newNode);
-                        nodeStack.add(newNode);
+                        nodeStack.push(newNode);
                     }
                 }
                 while(!nodeStack.empty()){
@@ -100,7 +112,7 @@ public class SyntaxAnalysis {
                 }
             }
         }
-        System.out.println("Analyze finished!");
+        System.out.println("accept!");
         return root;
     }
 

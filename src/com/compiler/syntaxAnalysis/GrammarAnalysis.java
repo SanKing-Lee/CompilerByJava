@@ -23,13 +23,13 @@ public class GrammarAnalysis {
     private static int productionId = 0;
 
     private List<Production> productions = new ArrayList<>();
+    private List<String> nonTerminals = new ArrayList<>();
+    private List<String> terminals = new ArrayList<>();
+
     private List<String> nullable = new ArrayList<>();
     private HashMap<String, List<String>> first = new HashMap<>();
     private HashMap<String, List<String>> follow = new HashMap<>();
-    private List<String> nonTerminals = new ArrayList<>();
-    private List<String> terminals = new ArrayList<>();
     private HashMap<Integer, List<String>> select = new HashMap<>();
-
 
     private String sGrammarFile;                          // 文法文件名
     private File grammarFile;                               // 文法文件
@@ -169,9 +169,9 @@ public class GrammarAnalysis {
         return flag;
     }
 
-    private boolean addDistinct(List<String> list, String symbol){
+    private boolean addDistinct(List<String> list, String symbol) {
         boolean flag = false;
-        if(!list.contains(symbol)){
+        if (!list.contains(symbol)) {
             list.add(symbol);
             flag = true;
         }
@@ -201,7 +201,7 @@ public class GrammarAnalysis {
             for (Production production : productions) {
                 String left = production.getLeft();
                 // 如果该产生式为一条空产生式
-                if(isNullProduction(production)){
+                if (isNullProduction(production)) {
                     changing = (addDistinct(nullable, left)) || changing;
                 }
                 boolean allNullableNonTerminal = true;
@@ -447,11 +447,24 @@ public class GrammarAnalysis {
             Production production = getProductionById(entry.getKey());
             List<String> symbols = entry.getValue();
             for (int i = 0; i < symbols.size(); i++) {
-//                System.out.println(production.getLeft() + " " + symbols.get(i));
                 analyzeTable.setProduction(production.getLeft(), symbols.get(i), production);
             }
         }
-//        System.out.println(analyzeTable.toString());
+
+        // 将follow集和first集中的所有符号作为同步符号
+        for (String nonTerminal : nonTerminals) {
+            List<String> syncSymbols = new ArrayList<>();
+            List<String> firstSymbols = first.getOrDefault(nonTerminal, new ArrayList<>());
+            List<String> followSymbols = follow.getOrDefault(nonTerminal, new ArrayList<>());
+
+//            unionList(syncSymbols, firstSymbols);
+            unionList(syncSymbols, followSymbols);
+
+            for(String syncSymbol:syncSymbols){
+                analyzeTable.setProduction(nonTerminal, syncSymbol, new Production(true));
+            }
+        }
+
         return analyzeTable;
     }
 
