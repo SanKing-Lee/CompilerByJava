@@ -100,7 +100,7 @@ public class LexicalAnalysis {
                 if (tag == ID) {
                     t = new Id(name.toString());
                 } else {
-                    t = new Token(tag);
+                    t = new Token(tag, scanner.getLineNum(), scanner.getColNum());
                 }
             }
             // 数字
@@ -164,7 +164,7 @@ public class LexicalAnalysis {
                             } while (isHex(currChar));
                         } else {
                             errorMessage("十六进制数字错误：0x后无数据");
-                            t = new Token(ERR);
+                            t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                         }
                     } else if (currChar == 'b' || currChar == 'B') {
                         // 以0b开始的二进制数字
@@ -176,7 +176,7 @@ public class LexicalAnalysis {
                             } while (isBin(currChar));
                         } else {
                             errorMessage("二进制数字错误：0b后无数据");
-                            t = new Token(ERR);
+                            t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                         }
                     } else if (isOctal(currChar)) {
                         // 以0开始的八进制数字
@@ -200,7 +200,7 @@ public class LexicalAnalysis {
                     scan();
                     if (currChar == '\n' || scanner.isEOF()) {
                         errorMessage("读入转义字符时遇到换行或文件结尾！");
-                        t = new Token(ERR);
+                        t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                     }
                     switch (currChar) {
                         case 'n':
@@ -220,18 +220,18 @@ public class LexicalAnalysis {
                             break;
                         default:
                             errorMessage("无效的转义字符！");
-                            t = new Token(ERR);
+                            t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                     }
                 }
                 // 读入字符常量时遇到换行符或者文件结尾
                 else if (currChar == '\n' || scanner.isEOF()) {
                     errorMessage("读入字符常量时遇到换行或者文件结尾！");
-                    t = new Token(ERR);
+                    t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                 }
                 // 遇到了后单引号，字符常量没有数据
                 else if (currChar == '\'') {
                     errorMessage("字符常量里没有数据！");
-                    t = new Token(ERR);
+                    t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                 }
                 // 读入一个正常的字符常量
                 else c = currChar;
@@ -242,7 +242,7 @@ public class LexicalAnalysis {
                         t = new Char(c);
                     } else {
                         errorMessage("读入字符常量错误：没有相应的右单引号！");
-                        t = new Token(ERR);
+                        t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                     }
                 }
                 scan();
@@ -255,7 +255,7 @@ public class LexicalAnalysis {
                         scan();
                         if (scanner.isEOF()) {
                             errorMessage("读入字符串遇到文件结尾！");
-                            t = new Token(ERR);
+                            t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                             break;
                         }
                         switch (currChar) {
@@ -282,7 +282,7 @@ public class LexicalAnalysis {
                         }
                     } else if (currChar == '\n' || scanner.isEOF()) {
                         errorMessage("读取字符串常量时遇到换行符或文件结尾！");
-                        t = new Token(ERR);
+                        t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                         break;
                     } else {
                         str.append(currChar);
@@ -300,13 +300,13 @@ public class LexicalAnalysis {
                 }
                 switch (currChar) {
                     case '+':
-                        t = new Token((scanNeed('+')) ? INC : ADD);
+                        t = new Token((scanNeed('+')) ? INC : ADD, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '-':
-                        t = new Token((scanNeed('-')) ? DEC : SUB);
+                        t = new Token((scanNeed('-')) ? DEC : SUB, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '*':
-                        t = new Token(MUL);
+                        t = new Token(MUL, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '/':
                         scan();
@@ -314,7 +314,7 @@ public class LexicalAnalysis {
                             scan();
                             while (!(currChar == '\n' || scanner.isEOF())) {
                                 scan();
-                                t = new Token(ERR);
+                                t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                             }
                         } else if (currChar == '*') {
                             scan();
@@ -323,69 +323,69 @@ public class LexicalAnalysis {
                                 if (currChar == '*') {
                                     while (currChar == '*') scan();
                                     if (currChar == '/') {
-                                        t = new Token(PLACEHOLDER);
+                                        t = new Token(PLACEHOLDER, scanner.getLineNum(), scanner.getColNum());
                                         break;
                                     }
                                 }
                                 if (t == null && scanner.isEOF()) {
                                     errorMessage("多行注释出错!");
-                                    t = new Token(ERR);
+                                    t = new Token(ERR, scanner.getLineNum(), scanner.getColNum());
                                 }
                             }
                         } else {
-                            t = new Token(DIV);
+                            t = new Token(DIV, scanner.getLineNum(), scanner.getColNum());
                         }
                         break;
                     case '%':
-                        t = new Token(MOD);
+                        t = new Token(MOD, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '>':
-                        t = new Token((scanNeed('=')) ? GE : GT);
+                        t = new Token((scanNeed('=')) ? GE : GT, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '<':
-                        t = new Token((scanNeed('=')) ? LE : LT);
+                        t = new Token((scanNeed('=')) ? LE : LT, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '=':
-                        t = new Token((scanNeed('=')) ? EQU : ASSIGN);
+                        t = new Token((scanNeed('=')) ? EQU : ASSIGN, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '&':
-                        t = new Token((scanNeed('&')) ? AND : LEA);
+                        t = new Token((scanNeed('&')) ? AND : LEA, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '|':
-                        t = new Token((scanNeed('|')) ? OR : ERR);
+                        t = new Token((scanNeed('|')) ? OR : ERR, scanner.getLineNum(), scanner.getColNum());
                         if (t.getTag() == ERR) {
                             errorMessage("||未定义！");
                         }
                         break;
                     case '!':
-                        t = new Token((scanNeed('=')) ? NEQU : NOT);
+                        t = new Token((scanNeed('=')) ? NEQU : NOT, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case ',':
-                        t = new Token(COMMA);
+                        t = new Token(COMMA, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case ':':
-                        t = new Token(COLON);
+                        t = new Token(COLON, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case ';':
-                        t = new Token(SEMICON);
+                        t = new Token(SEMICON, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '(':
-                        t = new Token(LPAREN);
+                        t = new Token(LPAREN, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case ')':
-                        t = new Token(RPAREN);
+                        t = new Token(RPAREN, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '[':
-                        t = new Token(LBRACK);
+                        t = new Token(LBRACK, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case ']':
-                        t = new Token(RBRACK);
+                        t = new Token(RBRACK, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '{':
-                        t = new Token(LBRACE);
+                        t = new Token(LBRACE, scanner.getLineNum(), scanner.getColNum());
                         break;
                     case '}':
-                        t = new Token(RBRACE);
+                        t = new Token(RBRACE, scanner.getLineNum(), scanner.getColNum());
                         break;
                     default:
                 }
@@ -394,7 +394,7 @@ public class LexicalAnalysis {
             // System.out.println(t.toString());
              tokens.add(t);
         }
-        tokens.add(new Token(END));
+        tokens.add(new Token(END, scanner.getLineNum(), scanner.getColNum()));
         return tokens;
     }
 }

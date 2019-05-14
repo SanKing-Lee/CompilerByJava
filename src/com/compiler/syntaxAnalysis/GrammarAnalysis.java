@@ -17,18 +17,21 @@ import java.util.regex.Pattern;
  */
 
 public class GrammarAnalysis {
-    private static final String noneTerminalRegx = "<[a-z]+'*>";  // 非终结符的匹配模式
+    private static final String noneTerminalRegx = "<[a-z]+'*>";        // 非终结符的匹配模式
     private static final String terminalRegx = "([A-Z])+(_[A-Z]+)*";    // 终结符的匹配模式
-    private static final String nullRegx = "null";
-    private static int productionId = 0;
+    private static final String nullRegx = "null";                      // null的匹配模式
+    private static int productionId = 0;                                // 全局变量，产生式的起始id
 
-    private List<Production> productions = new ArrayList<>();
-    private List<String> nonTerminals = new ArrayList<>();
-    private List<String> terminals = new ArrayList<>();
+    private List<Production> productions = new ArrayList<>();           // 存储所有的产生式
+    private List<String> nonTerminals = new ArrayList<>();              // 存储所有的非终结符
+    private List<String> terminals = new ArrayList<>();                 // 存储所有的终结符
 
-    private List<String> nullable = new ArrayList<>();
+    private List<String> nullable = new ArrayList<>();                  // 存储所有可空非终结符
+    // 存储非终结符的first集，key为非终结符，value为它的first集
     private HashMap<String, List<String>> first = new HashMap<>();
+    // 存储非终结符的follow集，key为非终结符，value为它的follow集
     private HashMap<String, List<String>> follow = new HashMap<>();
+    // 存储产生式的select集，key为产生式id，value为它的select集
     private HashMap<Integer, List<String>> select = new HashMap<>();
 
     private String sGrammarFile;                          // 文法文件名
@@ -317,6 +320,7 @@ public class GrammarAnalysis {
             follow.put(nonTerminal, new ArrayList<>());
         }
 
+        // 为开始符加入一个END后随符号
         List<String> programFollow = new ArrayList<>();
         programFollow.add("END");
         follow.put("<program>", programFollow);
@@ -353,7 +357,6 @@ public class GrammarAnalysis {
                         }
                     }
                 }
-                // FOLLOW.putIfAbsent(nonTerminal.getName(), temp);
             }
         }
 //        System.out.println("所有非终结符的FOLLOW集：");
@@ -464,6 +467,8 @@ public class GrammarAnalysis {
                 analyzeTable.setProduction(nonTerminal, syncSymbol, new Production(true));
             }
         }
+
+        System.out.println(analyzeTable.toString());
 
         return analyzeTable;
     }

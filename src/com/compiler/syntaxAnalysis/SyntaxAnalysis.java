@@ -70,9 +70,10 @@ public class SyntaxAnalysis {
                 if (t.equals(token.getTag().name())) {
                     scan();
                     analyzeStack.pop();
-                    treeStack.pop();
+                    treeStack.pop().setUserObject(token);
                 } else {
-                    System.out.println(token.getTag() + " does not match " + t);
+                    System.out.println(token.getPosition().getRowNumber() + ", " + token.getPosition().getColNumber()
+                            + ": " + token.getTag() + " does not match " + t);
                     scan();
                 }
             } else if (isNonTerminal(t)) {
@@ -85,14 +86,17 @@ public class SyntaxAnalysis {
 //                System.out.println(production);
                 // 错误恢复，如果当前的产生式为空，则将当前词法记号前移
                 if (production == null) {
-                    System.out.println("Error: Null Production!");
+                    System.out.println(token.getPosition().getRowNumber() + ", " + token.getPosition().getColNumber()
+                            + ": " + "Error: Null Production!");
                     scan();
                     continue;
                 }
                 // 如果当前的产生式为一条同步产生式，则将当前分析栈顶的终结符弹出
                 if (production.isSync()){
-                    System.out.println("Error: Synchronized");
+                    System.out.println(token.getPosition().getRowNumber() + ", " + token.getPosition().getColNumber()
+                            + ": " + "Error: Synchronized");
                     analyzeStack.pop();
+                    treeStack.pop();
                     continue;
                 }
                 List<String> symbols = production.getRight();

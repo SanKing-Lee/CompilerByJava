@@ -17,12 +17,18 @@ import static com.compiler.lexicalAnalysis.Tag.*;
 
 public class Token {
     private Tag tag;
+    private Position position;
 
     Token() {
     }
 
     Token(Tag tag) {
         this.tag = tag;
+    }
+
+    Token(Tag tag, int rowNumber, int colNumber){
+        this.tag = tag;
+        this.position = new Position(rowNumber, colNumber);
     }
 
     public Tag getTag() {
@@ -35,6 +41,14 @@ public class Token {
 
     public String toString(){
         return "关键字：" + tag;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
+    public void setPosition(Position position) {
+        this.position = position;
     }
 }
 

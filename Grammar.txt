@@ -50,6 +50,6 @@
 <forinit>-><localdef>|<altexpr> SEMICON
 <ifstat>-> KW_IF LPAREN <expr> RPAREN <block> <elsestat>
 <elsestat>-> KW_ELSE <block>|null
-<switchstat>->KW_SWITCH LPAREN <expr> RPAREN LBRACK <casestat> RBRACK
+<switchstat>->KW_SWITCH LPAREN <expr> RPAREN LBRACE <casestat> RBRACE
 <casestat>->KW_CASE <caselable> COLON <subprogram> <casestat>|KW_DEFAULT COLON <subprogram>
 <caselable>-><literal>
