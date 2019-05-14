@@ -68,9 +68,10 @@ public class SyntaxAnalysis {
             String t = analyzeStack.peek();
             if (isTerminal(t)) {
                 if (t.equals(token.getTag().name())) {
+                    String s1 = analyzeStack.pop();
+                    DefaultMutableTreeNode n1 = treeStack.pop();
+                    n1.setUserObject(token);
                     scan();
-                    analyzeStack.pop();
-                    treeStack.pop().setUserObject(token);
                 } else {
                     System.out.println(token.getPosition().getRowNumber() + ", " + token.getPosition().getColNumber()
                             + ": " + token.getTag() + " does not match " + t);

@@ -5,7 +5,7 @@
 <defdata>->ID <varrdef>|MUL ID <init>
 <varrdef>->LBRACK NUM RBRACK|<init>
 <init>->ASSIGN <expr>|null
-<def>->ID <idtail>|MUL ID <init> <deflist>
+<def>->ID <idtail>|MUL ID <init> <deflist> | KW_MAIN <idtail>
 <deflist>->COMMA <defdata> <deflist>|SEMICON
 <idtail>-><varrdef> <deflist>|LPAREN <para> RPAREN <funtail>
 <funtail>->SEMICON|<block>

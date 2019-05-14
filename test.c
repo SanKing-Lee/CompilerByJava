@@ -1,5 +1,10 @@
 extern int a = 0;
 
+int main(){
+    func(3);
+    return 0;
+}
+
 int func(int b){
     int *ptr = &a;
     int c = 3.2;
