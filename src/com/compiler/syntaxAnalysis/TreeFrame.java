@@ -29,6 +29,7 @@ public class TreeFrame extends JFrame {
         Dimension2D screen = toolkit.getScreenSize();
         setLocation((int)(screen.getWidth() - DEFAULT_WIDTH)/2, (int)(screen.getHeight()-DEFAULT_HEIGHT)/2);
         model = new DefaultTreeModel(root);
+        model.setAsksAllowsChildren(true);
         tree = new JTree(model);
         add(new JScrollPane(tree));
 

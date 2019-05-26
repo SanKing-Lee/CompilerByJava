@@ -50,7 +50,7 @@ public class GrammarAnalysis {
         initFirst();
         initFollow();
         initSelect();
-        writeToFile("information.txt");
+        writeToFile("information.dat");
     }
 
     /**
@@ -468,7 +468,7 @@ public class GrammarAnalysis {
             }
         }
 
-        System.out.println(analyzeTable.toString());
+        //System.out.println(analyzeTable.toString());
 
         return analyzeTable;
     }
@@ -489,21 +489,25 @@ public class GrammarAnalysis {
             for (Production production : productions) {
                 printWriter.println(production.toString());
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("所有非终结符: ");
             for (String symbol : nonTerminals) {
                 printWriter.println(symbol);
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("所有终结符: ");
             for (String symbol : terminals) {
                 printWriter.println(symbol);
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("所有可空非终结符: ");
             for (String symbol : nullable) {
                 printWriter.println(symbol);
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("FIRST集：");
             for (Map.Entry<String, List<String>> entry : first.entrySet()) {
@@ -513,6 +517,7 @@ public class GrammarAnalysis {
                 }
                 printWriter.println();
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("FOLLOW集：");
             for (Map.Entry<String, List<String>> entry : follow.entrySet()) {
@@ -522,6 +527,7 @@ public class GrammarAnalysis {
                 }
                 printWriter.println();
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("SELECT集: ");
             for (Map.Entry<Integer, List<String>> entry : select.entrySet()) {
@@ -531,6 +537,7 @@ public class GrammarAnalysis {
                 }
                 printWriter.println();
             }
+            printWriter.flush();
             printWriter.println();
             printWriter.println("预测分析表：");
             printWriter.println(generateAnalyzeTable().toString());

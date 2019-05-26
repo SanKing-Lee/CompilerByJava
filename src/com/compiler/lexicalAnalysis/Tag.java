@@ -11,7 +11,7 @@ package com.compiler.lexicalAnalysis;
  */
 
 public enum Tag {
-    ERR, NULL, NUM, END,
+    ERR, NULL, END,
     ID, PLACEHOLDER,
     KW_INT, KW_DOUBLE, KW_CHAR, KW_VOID, KW_STRING, KW_MAIN,
     KW_EXTERN,

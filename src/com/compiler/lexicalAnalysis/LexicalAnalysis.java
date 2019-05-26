@@ -1,5 +1,8 @@
 package com.compiler.lexicalAnalysis;
 
+import com.compiler.Error;
+import com.compiler.lexicalAnalysis.tokens.*;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,7 +117,7 @@ public class LexicalAnalysis {
                         scan();
                     } while (isDigit(currChar));
                     val = java.lang.Double.valueOf(num.toString());
-                    t = new Int((int) val);
+                    t = new Int((int) val, scanner.getLineNum(), scanner.getColNum());
                     if (currChar == '.') {
                         num.append('.');
                         scan();
@@ -124,7 +127,7 @@ public class LexicalAnalysis {
                             scan();
                         } while (isDigit(currChar));
                         val = java.lang.Double.valueOf(num.toString());
-                        t = new Double(val);
+                        t = new com.compiler.lexicalAnalysis.tokens.Double(val, scanner.getLineNum(), scanner.getColNum());
                     }
                     if (currChar == 'e' || currChar == 'E') {
                         int exp = 0;
@@ -143,7 +146,7 @@ public class LexicalAnalysis {
                         } else {
                             val *= Math.pow(10, exp);
                         }
-                        t = new Double(val);
+                        t = new com.compiler.lexicalAnalysis.tokens.Double(val, scanner.getLineNum(), scanner.getColNum());
                     }
                 } else {
                     scan();
@@ -187,7 +190,7 @@ public class LexicalAnalysis {
                     }
                 }
                 if (t == null) {
-                    t = new Int((int) val);
+                    t = new Int((int) val, scanner.getLineNum(), scanner.getColNum());
                 }
             }
             // 字符常量
@@ -289,7 +292,7 @@ public class LexicalAnalysis {
                     }
                 }
                 if (t == null) {
-                    t = new Str(str.toString());
+                    t = new Str(str.toString(), scanner.getLineNum(), scanner.getColNum());
                 }
                 scan();
             }
@@ -391,8 +394,8 @@ public class LexicalAnalysis {
                 }
                 scan();
             }
-            // System.out.println(t.toString());
-             tokens.add(t);
+//             System.out.println(t.toString());
+            tokens.add(t);
         }
         tokens.add(new Token(END, scanner.getLineNum(), scanner.getColNum()));
         return tokens;

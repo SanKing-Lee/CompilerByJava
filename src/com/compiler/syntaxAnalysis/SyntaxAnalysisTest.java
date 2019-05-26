@@ -14,13 +14,12 @@ import java.awt.*;
  */
 
 public class SyntaxAnalysisTest {
-    public static void main(String[] args){
-        SyntaxAnalysis syntaxAnalysis = new SyntaxAnalysis();
-
-        EventQueue.invokeLater(()->{
-            JFrame frame = new TreeFrame(syntaxAnalysis.analyze());
-            frame.setTitle("抽象语法树");
-            frame.setVisible(true);
-        });
+    public static void main(String[] args) {
+//        SyntaxAnalysis syntaxAnalysis = new SyntaxAnalysis();
+//        JFrame frame = new TreeFrame(syntaxAnalysis.analyze());
+//        frame.setTitle("分析树");
+//        frame.setVisible(true);
+        SymTabGenerate symTabGenerate = new SymTabGenerate();
+        System.out.println(symTabGenerate.generateSymTab());
     }
 }

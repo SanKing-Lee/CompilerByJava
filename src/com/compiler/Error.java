@@ -1,4 +1,4 @@
-package com.compiler.lexicalAnalysis;
+package com.compiler;
 
 /**
  * Author:

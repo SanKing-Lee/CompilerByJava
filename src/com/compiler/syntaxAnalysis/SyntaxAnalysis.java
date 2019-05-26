@@ -1,12 +1,20 @@
 package com.compiler.syntaxAnalysis;
 
 import com.compiler.lexicalAnalysis.LexicalAnalysis;
-import com.compiler.lexicalAnalysis.Token;
+import com.compiler.lexicalAnalysis.Tag;
+import com.compiler.lexicalAnalysis.tokens.Id;
+import com.compiler.lexicalAnalysis.tokens.Int;
+import com.compiler.lexicalAnalysis.tokens.Token;
+import com.compiler.syntaxAnalysis.symbolTable.Fun;
+import com.compiler.syntaxAnalysis.symbolTable.SymTab;
+import com.compiler.syntaxAnalysis.symbolTable.Var;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.compiler.lexicalAnalysis.Tag.*;
 
 /**
  * Author: Sean
@@ -23,14 +31,19 @@ public class SyntaxAnalysis {
     private static final String noneTerminalRegx = "<[a-z]+'*>";        // 非终结符的匹配模式
     private static final String terminalRegx = "([A-Z])+(_[A-Z]+)*";    // 终结符的匹配模式
     private static final String nullRegx = "null";                      // 空符的匹配模式
+
     private ArrayList<Token> tokens;                                    // 词法记号流
     private AnalyzeTable analyzeTable;                                  // 预测分析表
     private Token token;                                                // 当前的词法记号
     private Stack<String> analyzeStack;                                 // 预测分析栈
     private static int Pos = 0;                                         // 词法记号的位置
     private DefaultMutableTreeNode root;                                // 生成抽象语法树的根结点
-    private DefaultMutableTreeNode currentNode;                         // 当前的结点
     private Stack<DefaultMutableTreeNode> treeStack;                    // 用于生成语法树的栈
+    private SymTab symTab = new SymTab();
+    private int errorCount = 0;
+//    private ArrayList<Token> symList;
+//    private int symPos = 0;
+//    private Token currSymbol;
 
     /**
      * 构造函数，完成了私有变量的定义
@@ -41,12 +54,12 @@ public class SyntaxAnalysis {
         analyzeTable = grammarAnalysis.generateAnalyzeTable();
         // 调用词法分析并获得所有的词法记号
         LexicalAnalysis lexicalAnalysis = new LexicalAnalysis("test.c");
-        tokens = (ArrayList<Token>)lexicalAnalysis.analyze();
+        tokens = (ArrayList<Token>) lexicalAnalysis.analyze();
         // 初始化分析栈、根结点、当前结点和树栈
         analyzeStack = new Stack<>();
         root = new DefaultMutableTreeNode(START_SYMBOL);
-        currentNode = root;
         treeStack = new Stack<>();
+//        symList = new ArrayList<>();
 
         analyzeStack.push("END");
         analyzeStack.push(START_SYMBOL);
@@ -58,19 +71,30 @@ public class SyntaxAnalysis {
      * 分析程序，t为当前的栈顶符号，token为当前的词法记号
      * 1.   如果当前的词法记号是一个终结符，则将它和栈顶符号进行比较，如果是一样的，则将栈顶符号弹出，如果不匹配，则报错
      * 2.   如果当前的词法记号是一个非终结符，则将它从栈顶弹出，并从分析表中找到对应的产生式，将产生式的右部符号全部压入栈内
-     *      如果没有找到产生式，则报错，并弹出当前的栈顶符号，令token等于下一个词法记号，直到找到匹配的产生式为止
+     * 如果没有找到产生式，则报错，并弹出当前的栈顶符号，令token等于下一个词法记号，直到找到匹配的产生式为止
      * 3.   分析栈为空，则说明成功分析完了所有的词法记号，accept
-     * @return  生成的语法树的根结点
+     *
+     * @return 生成的语法树的根结点
      */
     public DefaultMutableTreeNode analyze() {
+        DefaultMutableTreeNode currentNode = root;
         scan();
         while (!analyzeStack.empty()) {
             String t = analyzeStack.peek();
+//            System.out.println(t);
             if (isTerminal(t)) {
                 if (t.equals(token.getTag().name())) {
-                    String s1 = analyzeStack.pop();
+                    analyzeStack.pop();
+//                    System.out.println(t);
+//                    if (t.equals("LBRACE")) {
+//                        symTab.enter();
+//                    }
+//                    if (t.equals("RBRACE")) {
+//                        symTab.leave();
+//                    }
                     DefaultMutableTreeNode n1 = treeStack.pop();
                     n1.setUserObject(token);
+                    n1.setAllowsChildren(false);
                     scan();
                 } else {
                     System.out.println(token.getPosition().getRowNumber() + ", " + token.getPosition().getColNumber()
@@ -93,7 +117,7 @@ public class SyntaxAnalysis {
                     continue;
                 }
                 // 如果当前的产生式为一条同步产生式，则将当前分析栈顶的终结符弹出
-                if (production.isSync()){
+                if (production.isSync()) {
                     System.out.println(token.getPosition().getRowNumber() + ", " + token.getPosition().getColNumber()
                             + ": " + "Error: Synchronized");
                     analyzeStack.pop();
@@ -108,15 +132,24 @@ public class SyntaxAnalysis {
                         analyzeStack.push(symbol);
                         DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(symbol);
                         treeStack.push(newNode);
+//                        if(isTerminal(symbol)) {
                         nodeStack.push(newNode);
+//                        }
                     }
+//                    else{
+//                        currentNode.add(new DefaultMutableTreeNode("null"));
+//                    }
                 }
-                while(!nodeStack.empty()){
-                    currentNode.add(nodeStack.pop());
+                while (!nodeStack.empty()) {
+                    DefaultMutableTreeNode node = nodeStack.pop();
+                    node.setAllowsChildren(true);
+                    currentNode.add(node);
                 }
             }
         }
         System.out.println("accept!");
+
+
         return root;
     }
 
@@ -125,6 +158,17 @@ public class SyntaxAnalysis {
             token = tokens.get(Pos++);
         }
     }
+
+//    private void move() {
+//        if (symPos < symList.size()) {
+//            currSymbol = symList.get(symPos++);
+//        }
+//    }
+//
+//    private boolean hasNextSym() {
+//        return symPos > symList.size();
+//    }
+
 
     /**
      * 根据regx匹配字符串，并返回匹配到的字符串

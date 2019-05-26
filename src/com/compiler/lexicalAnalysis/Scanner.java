@@ -81,6 +81,6 @@ public class Scanner {
     }
 
     public boolean isEOF() {
-        return readPos >= bufferLength;
+        return readPos > bufferLength;
     }
 }

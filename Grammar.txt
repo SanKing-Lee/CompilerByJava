@@ -1,16 +1,16 @@
 <program>-><segment> <program>|null
 <segment>->KW_EXTERN <segment'>|<segment'>
 <segment'>-><type> <def>
-<type>->KW_INT|KW_CHAR|KW_VOID
+<type>->KW_INT|KW_CHAR|KW_VOID|KW_DOUBLE|KW_STRING
 <defdata>->ID <varrdef>|MUL ID <init>
-<varrdef>->LBRACK NUM RBRACK|<init>
+<varrdef>->LBRACK <num> RBRACK|<init>
 <init>->ASSIGN <expr>|null
 <def>->ID <idtail>|MUL ID <init> <deflist> | KW_MAIN <idtail>
 <deflist>->COMMA <defdata> <deflist>|SEMICON
 <idtail>-><varrdef> <deflist>|LPAREN <para> RPAREN <funtail>
 <funtail>->SEMICON|<block>
 <paradata>->MUL ID|ID <paradatatail>
-<paradatatail>->LBRACK NUM RBRACK|null
+<paradatatail>->LBRACK <num> RBRACK|null
 <paralist>->COMMA <type> <paradata> <paralist>|null
 <para>-><type> <paradata> <paralist>|null
 <block>->LBRACE <subprogram> RBRACE
@@ -40,7 +40,7 @@
 <realarg>-><arg> <arglist>|null
 <arglist>->COMMA <arg> <arglist>|null
 <arg>-><expr>
-<literal>->NUM|CH|STR
+<literal>-><num>|CH|STR
 <expr>-><assexpr>
 <altexpr>-><expr>|null
 <statement>-><altexpr> SEMICON|<whilestat>|<forstat>|<dowhilestat>|<ifstat>|<switchstat>|KW_BREAK SEMICON|KW_CONTINUE SEMICON|KW_RETURN <altexpr> SEMICON
@@ -53,3 +53,4 @@
 <switchstat>->KW_SWITCH LPAREN <expr> RPAREN LBRACE <casestat> RBRACE
 <casestat>->KW_CASE <caselable> COLON <subprogram> <casestat>|KW_DEFAULT COLON <subprogram>
 <caselable>-><literal>
+<num>->INT|DOUBLE
